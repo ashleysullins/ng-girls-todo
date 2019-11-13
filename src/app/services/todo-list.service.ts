@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { TodoItem } from '../interfaces/todo-item';
 import { StorageService } from './storage.service';
+import { HttpClient } from '@angular/common/http';
+import { Subject } from 'rxjs';
 
 const todoListStorageKey = 'Todo_List';
 
@@ -14,8 +16,10 @@ const defaultTodolist = [
 })
 export class TodoListService {
   todoList: TodoItem[];
+  private todoListSubject: Subject<TodoItem[]> = new Subject<TodoItem[]>();
 
-  constructor(private storageService: StorageService) {
+  constructor(private storageService: StorageService,
+              private http: HttpClient) {
     this.todoList =
       storageService.getData(todoListStorageKey) || defaultTodolist;
    }
@@ -24,9 +28,17 @@ export class TodoListService {
     this.storageService.setData(todoListStorageKey, this.todoList);
   }
 
+  retrieveListFromDataBase() {
+    this.http.get<TodoItem[]>('http://localhost:3000/items').subscribe(
+      response => this.todoListSubject.next(response)
+    );
+  }
+
   addItem(item: TodoItem) {
-    this.todoList.push(item);
-    this.saveList();
+    console.log(item);
+    this.http.post('http://localhost:3000/items', item).subscribe(
+      () => this.retrieveListFromDataBase()
+    );
   }
 
   updateItem(item: TodoItem, changes) {
@@ -42,6 +54,6 @@ export class TodoListService {
   }
 
   getTodoList() {
-    return this.todoList;
+    return this.todoListSubject.asObservable();
   }
 }

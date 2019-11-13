@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { TodoListService } from '../services/todo-list.service';
 import { TodoItem } from '../interfaces/todo-item';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-list-manager',
@@ -8,8 +9,8 @@ import { TodoItem } from '../interfaces/todo-item';
   <div class="todo-app">
     <app-input-button-unit (submit)=addItem($event)></app-input-button-unit>
 
-    <ul>
-      <li *ngFor="let todoItem of todoList">
+    <ul *ngIf="todoList | async as todoItems">
+      <li *ngFor="let todoItem of todoItems">
         <app-todo-item [item]="todoItem"
                        (remove)="removeItem($event)"
                        (update)="updateItem($event.item, $event.changes)">
@@ -21,18 +22,18 @@ import { TodoItem } from '../interfaces/todo-item';
   styleUrls: ['./list-manager.component.less']
 })
 export class ListManagerComponent implements OnInit {
-  todoList: TodoItem[];
+  todoList: Observable<TodoItem[]>;
 
   constructor(private todoListService: TodoListService) {
     todoListService.getTodoList();
    }
 
   ngOnInit() {
-    this.todoList = this.todoListService.getTodoList();
+     this.todoList = this.todoListService.getTodoList();
   }
 
-  addItem(title: string) {
-    this.todoListService.addItem({ title });
+  addItem(item: TodoItem) {
+    this.todoListService.addItem(item);
   }
 
   removeItem(item) {
